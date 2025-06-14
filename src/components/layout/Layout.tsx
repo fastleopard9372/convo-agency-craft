@@ -34,14 +34,12 @@ export const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1 flex flex-col">
-          <Header />
-          <main className="flex-1 p-6 overflow-auto">
-            {children}
-          </main>
-        </div>
+      <Sidebar />
+      <div className="lg:ml-64">
+        <Header />
+        <main className="p-6 overflow-auto">
+          {children}
+        </main>
       </div>
     </div>
   )
