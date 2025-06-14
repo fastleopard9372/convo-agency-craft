@@ -1,28 +1,35 @@
 
-import { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { FileText, Calendar, ExternalLink, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react'
+import { useSelector } from 'react-redux'
+import { RootState } from '@/store'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { RootState, AppDispatch } from '@/store'
-import { fetchProposals } from '@/store/slices/proposalsSlice'
-import { formatDistanceToNow } from 'date-fns'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Plus, Search, FileText, Calendar, DollarSign } from 'lucide-react'
 
 export const Proposals = () => {
-  const dispatch = useDispatch<AppDispatch>()
-  const { proposals, isLoading } = useSelector((state: RootState) => state.proposals)
+  const { proposals, jobs } = useSelector((state: RootState) => ({
+    proposals: state.proposals.proposals,
+    jobs: state.jobs.jobs,
+  }))
 
-  useEffect(() => {
-    dispatch(fetchProposals({}))
-  }, [dispatch])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
 
-  const getStatusColor = (status?: string) => {
+  const filteredProposals = proposals.filter(proposal => {
+    const matchesSearch = proposal.content.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || proposal.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  const getStatusVariant = (status: string) => {
     switch (status) {
       case 'submitted':
         return 'default'
       case 'accepted':
-        return 'success'
+        return 'default' // Changed from 'success' to 'default'
       case 'rejected':
         return 'destructive'
       default:
@@ -30,38 +37,82 @@ export const Proposals = () => {
     }
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'submitted':
+        return 'text-blue-600'
+      case 'accepted':
+        return 'text-green-600'
+      case 'rejected':
+        return 'text-red-600'
+      default:
+        return 'text-gray-600'
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Proposals</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Proposals</h1>
           <p className="text-muted-foreground">
-            View and manage your AI-generated proposals
+            Manage your job proposals and track their status
           </p>
         </div>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          Generate Proposal
+        </Button>
       </div>
 
-      {isLoading ? (
-        <div className="text-center py-8">Loading proposals...</div>
-      ) : (
-        <div className="space-y-4">
-          {proposals.map((proposal) => (
-            <Card key={proposal.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
+      {/* Filters */}
+      <div className="flex gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search proposals..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="draft">Draft</SelectItem>
+            <SelectItem value="submitted">Submitted</SelectItem>
+            <SelectItem value="accepted">Accepted</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Proposals Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {filteredProposals.map((proposal) => {
+          const job = jobs.find(j => j.id === proposal.jobId)
+          return (
+            <Card key={proposal.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <CardTitle className="text-lg">
-                      Proposal for Job #{proposal.jobId.slice(0, 8)}
+                    <CardTitle className="text-lg line-clamp-2">
+                      {job?.title || 'Unknown Job'}
                     </CardTitle>
-                    <CardDescription>
-                      Generated {formatDistanceToNow(new Date(proposal.generatedAt), { addSuffix: true })}
+                    <CardDescription className="flex items-center gap-2">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(proposal.generatedAt).toLocaleDateString()}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={getStatusColor(proposal.status)}>
-                      {proposal.status || 'draft'}
-                    </Badge>
-                  </div>
+                  <Badge 
+                    variant={getStatusVariant(proposal.status)} 
+                    className={getStatusColor(proposal.status)}
+                  >
+                    {proposal.status}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -69,37 +120,45 @@ export const Proposals = () => {
                   {proposal.content}
                 </p>
                 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Calendar className="mr-1 h-4 w-4" />
-                    {proposal.submittedAt 
-                      ? `Submitted ${formatDistanceToNow(new Date(proposal.submittedAt), { addSuffix: true })}`
-                      : 'Not submitted yet'
-                    }
+                {job && (
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    {job.budgetMin && job.budgetMax && (
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                        ${job.budgetMin} - ${job.budgetMax}
+                      </div>
+                    )}
+                    {job.source && (
+                      <div className="flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        {job.source}
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm">
-                      <ExternalLink className="mr-1 h-4 w-4" />
-                      View
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Download className="mr-1 h-4 w-4" />
-                      Download
-                    </Button>
-                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    View Details
+                  </Button>
+                  <Button variant="default" size="sm" className="flex-1">
+                    Edit
+                  </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+          )
+        })}
+      </div>
 
-      {proposals.length === 0 && !isLoading && (
-        <div className="text-center py-8">
+      {filteredProposals.length === 0 && (
+        <div className="text-center py-12">
           <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">No proposals yet</h3>
+          <h3 className="mt-4 text-lg font-medium">No proposals found</h3>
           <p className="text-muted-foreground">
-            Generate your first AI-powered proposal from the Jobs section.
+            {searchTerm || statusFilter !== 'all' 
+              ? 'Try adjusting your search or filters' 
+              : 'Generate your first proposal to get started'}
           </p>
         </div>
       )}
