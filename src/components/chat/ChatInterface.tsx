@@ -98,9 +98,9 @@ export const ChatInterface = ({ conversationId, onOpenSidebar, sidebarOpen }: Ch
 
   if (!conversationId) {
     return (
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
         {/* Header */}
-        <div className="border-b p-4 flex items-center">
+        <div className="border-b p-4 flex items-center bg-background z-10">
           {!sidebarOpen && (
             <Button 
               onClick={onOpenSidebar} 
@@ -115,7 +115,7 @@ export const ChatInterface = ({ conversationId, onOpenSidebar, sidebarOpen }: Ch
         </div>
 
         {/* Empty State */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center pb-32">
           <div className="text-center max-w-md">
             <Bot className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold mb-2">Start a conversation</h3>
@@ -128,14 +128,43 @@ export const ChatInterface = ({ conversationId, onOpenSidebar, sidebarOpen }: Ch
             </Button>
           </div>
         </div>
+
+        {/* Fixed Input Area */}
+        <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4 z-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border">
+              <Textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={handleTextareaChange}
+                onKeyPress={handleKeyPress}
+                placeholder="Message FreelanceAI..."
+                className="flex-1 border-0 bg-transparent resize-none focus:ring-0 focus:outline-none min-h-[24px] max-h-[120px]"
+                disabled={true}
+                rows={1}
+              />
+              <Button
+                onClick={handleSend}
+                disabled={true}
+                size="sm"
+                className="rounded-md"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Start a conversation to begin chatting
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
       {/* Header */}
-      <div className="border-b p-4 flex items-center">
+      <div className="border-b p-4 flex items-center bg-background z-10">
         {!sidebarOpen && (
           <Button 
             onClick={onOpenSidebar} 
@@ -149,57 +178,59 @@ export const ChatInterface = ({ conversationId, onOpenSidebar, sidebarOpen }: Ch
         <h1 className="font-semibold">FreelanceAI</h1>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1">
-        <div className="max-w-3xl mx-auto p-4">
-          {messages.map((message) => (
-            <div key={message.id} className="mb-8">
-              <div className="flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
-                  {message.role === 'user' ? (
-                    <User className="w-4 h-4" />
-                  ) : (
+      {/* Messages - with bottom padding to account for fixed input */}
+      <div className="flex-1 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="max-w-4xl mx-auto p-4 pb-32">
+            {messages.map((message) => (
+              <div key={message.id} className="mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+                    {message.role === 'user' ? (
+                      <User className="w-4 h-4" />
+                    ) : (
+                      <Bot className="w-4 h-4" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm mb-1">
+                      {message.role === 'user' ? 'You' : 'Assistant'}
+                    </div>
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="mb-8">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
                     <Bot className="w-4 h-4" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm mb-1">
-                    {message.role === 'user' ? 'You' : 'Assistant'}
                   </div>
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="mb-8">
-              <div className="flex items-start gap-4">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
-                  <Bot className="w-4 h-4" />
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium text-sm mb-1">Assistant</div>
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <div className="flex-1">
+                    <div className="font-medium text-sm mb-1">Assistant</div>
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-      </ScrollArea>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+      </div>
 
-      {/* Input Area */}
-      <div className="border-t p-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+      {/* Fixed Input Area */}
+      <div className="fixed bottom-0 left-0 right-0 border-t bg-background p-4 z-20">
+        <div className="max-w-4xl mx-auto">
+          <div className="relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-3 border">
             <Textarea
               ref={textareaRef}
               value={inputValue}

@@ -8,7 +8,7 @@ export const Conversations = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex relative">
+    <div className="h-[calc(100vh-4rem)] flex relative overflow-hidden">
       {/* Sidebar */}
       {sidebarOpen && (
         <div className="w-64 border-r bg-background flex-shrink-0">
@@ -21,7 +21,7 @@ export const Conversations = () => {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 relative">
         <ChatInterface 
           conversationId={selectedConversationId}
           onOpenSidebar={() => setSidebarOpen(true)}
