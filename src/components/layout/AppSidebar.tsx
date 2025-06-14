@@ -22,8 +22,8 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Conversations', href: '/conversations', icon: MessageSquare },
   { name: 'Jobs', href: '/jobs', icon: Briefcase },
+  { name: 'Conversations', href: '/conversations', icon: MessageSquare },
   { name: 'Proposals', href: '/proposals', icon: FileText },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Brain },
   { name: 'Settings', href: '/settings', icon: Settings },
