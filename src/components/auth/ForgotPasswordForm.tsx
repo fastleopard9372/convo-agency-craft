@@ -1,5 +1,5 @@
 
-import { useDispatch, useSelector } from 'react-redux'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -10,9 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { forgotPassword } from '@/store/slices/authSlice'
-import { RootState, AppDispatch } from '@/store'
-import { useState } from 'react'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -22,8 +21,9 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
 
 export const ForgotPasswordForm = () => {
   const [emailSent, setEmailSent] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
-  const { isLoading, error } = useSelector((state: RootState) => state.auth)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   const {
     register,
@@ -35,11 +35,38 @@ export const ForgotPasswordForm = () => {
   })
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
+    setIsLoading(true)
+    setError(null)
+    
     try {
-      await dispatch(forgotPassword(data.email)).unwrap()
-      setEmailSent(true)
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      
+      if (error) {
+        setError(error.message)
+        toast({
+          variant: "destructive",
+          title: "Reset failed",
+          description: error.message,
+        })
+      } else {
+        setEmailSent(true)
+        toast({
+          title: "Reset email sent",
+          description: "Check your email for the password reset link.",
+        })
+      }
     } catch (error) {
-      console.error('Forgot password failed:', error)
+      console.error('Password reset failed:', error)
+      setError('An unexpected error occurred. Please try again.')
+      toast({
+        variant: "destructive",
+        title: "Reset failed",
+        description: "An unexpected error occurred. Please try again.",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
