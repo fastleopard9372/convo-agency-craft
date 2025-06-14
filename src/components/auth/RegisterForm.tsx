@@ -1,6 +1,5 @@
 
 import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,8 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { registerUser } from '@/store/slices/authSlice'
-import { RootState, AppDispatch } from '@/store'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -29,9 +28,10 @@ type RegisterFormData = z.infer<typeof registerSchema>
 export const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { isLoading, error } = useSelector((state: RootState) => state.auth)
+  const { toast } = useToast()
 
   const {
     register,
@@ -42,15 +42,47 @@ export const RegisterForm = () => {
   })
 
   const onSubmit = async (data: RegisterFormData) => {
+    setIsLoading(true)
+    setError(null)
+    
     try {
-      await dispatch(registerUser({
+      const redirectUrl = `${window.location.origin}/dashboard`
+      
+      const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        username: data.username,
-      })).unwrap()
-      navigate('/dashboard')
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            username: data.username,
+          }
+        }
+      })
+
+      if (error) {
+        setError(error.message)
+        toast({
+          variant: "destructive",
+          title: "Registration failed",
+          description: error.message,
+        })
+      } else {
+        toast({
+          title: "Registration successful!",
+          description: "Please check your email to confirm your account.",
+        })
+        navigate('/login')
+      }
     } catch (error) {
       console.error('Registration failed:', error)
+      setError('An unexpected error occurred. Please try again.')
+      toast({
+        variant: "destructive",
+        title: "Registration failed",
+        description: "An unexpected error occurred. Please try again.",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 

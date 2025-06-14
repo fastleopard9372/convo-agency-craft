@@ -2,13 +2,13 @@
 import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { supabase } from '@/integrations/supabase/client'
-import { setToken, logout } from '@/store/slices/authSlice'
+import { setToken, logout, setUser, setLoading } from '@/store/slices/authSlice'
 import type { User, Session } from '@supabase/supabase-js'
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUserState] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoadingState] = useState(true)
   const dispatch = useDispatch()
 
   useEffect(() => {
@@ -16,28 +16,55 @@ export const useAuth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session)
-        setUser(session?.user ?? null)
+        setUserState(session?.user ?? null)
         
         if (session?.access_token) {
           dispatch(setToken(session.access_token))
+          // Convert Supabase user to our User interface
+          if (session.user) {
+            const appUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              username: session.user.user_metadata?.username,
+              settings: {},
+              memoryQuotaMb: 1000, // Default value
+              createdAt: session.user.created_at,
+              updatedAt: session.user.updated_at || session.user.created_at,
+            }
+            dispatch(setUser(appUser))
+          }
         } else {
           dispatch(logout())
         }
         
-        setLoading(false)
+        setLoadingState(false)
+        dispatch(setLoading(false))
       }
     )
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      setUser(session?.user ?? null)
+      setUserState(session?.user ?? null)
       
       if (session?.access_token) {
         dispatch(setToken(session.access_token))
+        if (session.user) {
+          const appUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            username: session.user.user_metadata?.username,
+            settings: {},
+            memoryQuotaMb: 1000, // Default value
+            createdAt: session.user.created_at,
+            updatedAt: session.user.updated_at || session.user.created_at,
+          }
+          dispatch(setUser(appUser))
+        }
       }
       
-      setLoading(false)
+      setLoadingState(false)
+      dispatch(setLoading(false))
     })
 
     return () => subscription.unsubscribe()
