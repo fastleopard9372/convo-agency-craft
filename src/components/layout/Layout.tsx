@@ -1,13 +1,11 @@
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '@/store'
-import { Sidebar } from './Sidebar'
-import { Header } from './Header'
 import { setTheme } from '@/store/slices/themeSlice'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { Menu } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar'
+import { AppSidebar } from './AppSidebar'
+import { Header } from './Header'
 
 interface LayoutProps {
   children: ReactNode
@@ -16,7 +14,6 @@ interface LayoutProps {
 export const Layout = ({ children }: LayoutProps) => {
   const { theme } = useSelector((state: RootState) => state.theme)
   const dispatch = useDispatch()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     // Apply theme to document
@@ -37,30 +34,16 @@ export const Layout = ({ children }: LayoutProps) => {
   }, [dispatch, theme])
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Desktop Sidebar */}
-      <Sidebar />
-      
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Menu className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <Sidebar />
-          </SheetContent>
-        </Sheet>
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full bg-background text-foreground">
+        <AppSidebar />
+        <SidebarInset>
+          <Header />
+          <main className="p-6 overflow-auto">
+            {children}
+          </main>
+        </SidebarInset>
       </div>
-
-      <div className="lg:ml-64">
-        <Header />
-        <main className="p-6 overflow-auto">
-          {children}
-        </main>
-      </div>
-    </div>
+    </SidebarProvider>
   )
 }

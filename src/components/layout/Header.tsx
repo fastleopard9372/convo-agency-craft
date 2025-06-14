@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import { RootState, AppDispatch } from '@/store'
 import { toggleTheme } from '@/store/slices/themeSlice'
 import { useAuth } from '@/hooks/useAuth'
@@ -29,9 +30,10 @@ export const Header = () => {
   }
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center space-x-4">
+          <SidebarTrigger />
           <h1 className="text-xl font-semibold">FreelanceAI Platform</h1>
         </div>
 
