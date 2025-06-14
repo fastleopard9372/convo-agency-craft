@@ -3,7 +3,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios'
 import { store } from '@/store'
 import { logout } from '@/store/slices/authSlice'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5371/api'
 
 class ApiClient {
   private client: AxiosInstance
