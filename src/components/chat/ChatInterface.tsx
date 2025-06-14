@@ -1,12 +1,9 @@
 
 import { useState, useEffect, useRef } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { Send, Bot, User } from 'lucide-react'
+import { Send, Menu, Bot, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Card } from '@/components/ui/card'
-import { RootState } from '@/store'
 
 interface Message {
   id: string
@@ -17,13 +14,16 @@ interface Message {
 
 interface ChatInterfaceProps {
   conversationId: string | null
+  onOpenSidebar: () => void
+  sidebarOpen: boolean
 }
 
-export const ChatInterface = ({ conversationId }: ChatInterfaceProps) => {
+export const ChatInterface = ({ conversationId, onOpenSidebar, sidebarOpen }: ChatInterfaceProps) => {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -35,8 +35,6 @@ export const ChatInterface = ({ conversationId }: ChatInterfaceProps) => {
 
   useEffect(() => {
     if (conversationId) {
-      // Load messages for the selected conversation
-      // This would typically fetch from your API
       setMessages([
         {
           id: '1',
@@ -64,6 +62,11 @@ export const ChatInterface = ({ conversationId }: ChatInterfaceProps) => {
     setInputValue('')
     setIsLoading(true)
 
+    // Auto-resize textarea back to single line
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+    }
+
     // Simulate AI response
     setTimeout(() => {
       const aiMessage: Message = {
@@ -84,15 +87,46 @@ export const ChatInterface = ({ conversationId }: ChatInterfaceProps) => {
     }
   }
 
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value)
+    
+    // Auto-resize textarea
+    const textarea = e.target
+    textarea.style.height = 'auto'
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px'
+  }
+
   if (!conversationId) {
     return (
-      <div className="flex items-center justify-center h-full text-center">
-        <div>
-          <Bot className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Select a conversation</h3>
-          <p className="text-muted-foreground">
-            Choose a conversation from the sidebar or start a new one to begin chatting.
-          </p>
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="border-b p-4 flex items-center">
+          {!sidebarOpen && (
+            <Button 
+              onClick={onOpenSidebar} 
+              size="sm" 
+              variant="ghost"
+              className="mr-2"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+          )}
+          <h1 className="font-semibold">FreelanceAI</h1>
+        </div>
+
+        {/* Empty State */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <Bot className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Start a conversation</h3>
+            <p className="text-muted-foreground mb-6">
+              Select a conversation from the sidebar or start a new one to begin chatting.
+            </p>
+            <Button onClick={onOpenSidebar} variant="outline">
+              <Menu className="h-4 w-4 mr-2" />
+              Open Conversations
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -100,83 +134,94 @@ export const ChatInterface = ({ conversationId }: ChatInterfaceProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Chat Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="space-y-4">
+      {/* Header */}
+      <div className="border-b p-4 flex items-center">
+        {!sidebarOpen && (
+          <Button 
+            onClick={onOpenSidebar} 
+            size="sm" 
+            variant="ghost"
+            className="mr-2"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        )}
+        <h1 className="font-semibold">FreelanceAI</h1>
+      </div>
+
+      {/* Messages */}
+      <ScrollArea className="flex-1">
+        <div className="max-w-3xl mx-auto p-4">
           {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`flex max-w-[80%] ${
-                  message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-                } items-start space-x-2`}
-              >
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground ml-2'
-                      : 'bg-muted mr-2'
-                  }`}
-                >
+            <div key={message.id} className="mb-8">
+              <div className="flex items-start gap-4">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
                   {message.role === 'user' ? (
                     <User className="w-4 h-4" />
                   ) : (
                     <Bot className="w-4 h-4" />
                   )}
                 </div>
-                <Card
-                  className={`p-3 ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                </Card>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm mb-1">
+                    {message.role === 'user' ? 'You' : 'Assistant'}
+                  </div>
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
+          
           {isLoading && (
-            <div className="flex justify-start">
-              <div className="flex items-start space-x-2">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center mr-2">
+            <div className="mb-8">
+              <div className="flex items-start gap-4">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-gray-800">
                   <Bot className="w-4 h-4" />
                 </div>
-                <Card className="p-3 bg-muted">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="flex-1">
+                  <div className="font-medium text-sm mb-1">Assistant</div>
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                   </div>
-                </Card>
+                </div>
               </div>
             </div>
           )}
+          
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
       {/* Input Area */}
       <div className="border-t p-4">
-        <div className="flex space-x-2">
-          <Textarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your message here..."
-            className="min-h-[40px] max-h-[120px] resize-none"
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={!inputValue.trim() || isLoading}
-            size="icon"
-            className="h-10 w-10"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+        <div className="max-w-3xl mx-auto">
+          <div className="relative flex items-end gap-2 bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+            <Textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={handleTextareaChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Message FreelanceAI..."
+              className="flex-1 border-0 bg-transparent resize-none focus:ring-0 focus:outline-none min-h-[24px] max-h-[120px]"
+              disabled={isLoading}
+              rows={1}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={!inputValue.trim() || isLoading}
+              size="sm"
+              className="rounded-md"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            Press Enter to send, Shift+Enter for new line
+          </p>
         </div>
       </div>
     </div>
