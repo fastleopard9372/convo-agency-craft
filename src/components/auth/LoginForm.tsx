@@ -1,6 +1,5 @@
 
 import { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,8 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { loginUser } from '@/store/slices/authSlice'
-import { RootState, AppDispatch } from '@/store'
+import { supabase } from '@/integrations/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -23,9 +22,9 @@ type LoginFormData = z.infer<typeof loginSchema>
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false)
-  const dispatch = useDispatch<AppDispatch>()
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { isLoading, error } = useSelector((state: RootState) => state.auth)
+  const { toast } = useToast()
 
   const {
     register,
@@ -36,11 +35,35 @@ export const LoginForm = () => {
   })
 
   const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true)
     try {
-      await dispatch(loginUser(data)).unwrap()
-      navigate('/dashboard')
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description: error.message,
+        })
+      } else {
+        toast({
+          title: "Welcome back!",
+          description: "You have been logged in successfully.",
+        })
+        navigate('/dashboard')
+      }
     } catch (error) {
       console.error('Login failed:', error)
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: "An unexpected error occurred. Please try again.",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -54,12 +77,6 @@ export const LoginForm = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
