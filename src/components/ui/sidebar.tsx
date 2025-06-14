@@ -1,2 +1,2 @@
 
-export * from "./sidebar"
+export * from "./sidebar/index"
