@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { Toaster } from "@/components/ui/toaster"
@@ -9,6 +9,7 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 import { store, persistor, RootState } from '@/store'
+import { AuthProvider } from '@/components/auth/AuthProvider'
 import { Layout } from '@/components/layout/Layout'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { RegisterForm } from '@/components/auth/RegisterForm'
@@ -126,9 +127,11 @@ const App = () => (
     <PersistGate loading={null} persistor={persistor}>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <AppRoutes />
+          </AuthProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </PersistGate>

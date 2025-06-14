@@ -1,6 +1,6 @@
 
 import { useDispatch, useSelector } from 'react-redux'
-import { Bell, Moon, Sun, User } from 'lucide-react'
+import { Bell, Moon, Sun, User, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,15 +13,15 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { RootState, AppDispatch } from '@/store'
 import { toggleTheme } from '@/store/slices/themeSlice'
-import { logout } from '@/store/slices/authSlice'
+import { useAuth } from '@/hooks/useAuth'
 
 export const Header = () => {
   const dispatch = useDispatch<AppDispatch>()
-  const { user } = useSelector((state: RootState) => state.auth)
   const { theme } = useSelector((state: RootState) => state.theme)
+  const { user, signOut } = useAuth()
 
-  const handleLogout = () => {
-    dispatch(logout())
+  const handleLogout = async () => {
+    await signOut()
   }
 
   const handleThemeToggle = () => {
@@ -66,7 +66,7 @@ export const Header = () => {
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">{user?.username || 'User'}</p>
+                  <p className="text-sm font-medium">{user?.email}</p>
                   <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
               </DropdownMenuLabel>
@@ -77,6 +77,7 @@ export const Header = () => {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuContent>
