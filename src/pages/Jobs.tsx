@@ -28,7 +28,7 @@ export const Jobs = () => {
   const dispatch = useDispatch<AppDispatch>()
   const { jobs, isLoading, pagination } = useSelector((state: RootState) => state.jobs)
   const { generating } = useSelector((state: RootState) => state.proposals)
-
+  const [selId, setSelId] = useState(null);
   const { register, handleSubmit, reset, formState: { errors } } = useForm<JobFormData>()
 
   useEffect(() => {
@@ -47,6 +47,7 @@ export const Jobs = () => {
 
   const handleGenerateProposal = async (job: Job) => {
     try {
+      setSelId(job.id);
       await dispatch(generateProposal({ jobId: job.id })).unwrap()
     } catch (error) {
       console.error('Failed to generate proposal:', error)
@@ -216,7 +217,7 @@ export const Jobs = () => {
                     onClick={() => handleGenerateProposal(job)}
                     disabled={generating}
                   >
-                    {generating ? 'Generating...' : 'Generate Proposal'}
+                    {(generating&& selId === job.id) ?'Generating...' : 'Generate Proposal'}
                   </Button>
                 </div>
               </CardContent>

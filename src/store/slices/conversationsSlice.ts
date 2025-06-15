@@ -77,7 +77,9 @@ const conversationsSlice = createSlice({
   reducers: {
     addMessage: (state, action) =>{
       state.currentConversation?.messages.push(action.payload);
-      state.currentConversation.messageCount = state.currentConversation.messageCount +1;
+      if(state.currentConversation){
+        state.currentConversation.messageCount = state.currentConversation.messageCount + 1;
+      }
     },
     clearError: (state) => {
       state.error = null
