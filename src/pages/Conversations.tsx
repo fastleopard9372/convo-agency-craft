@@ -7,65 +7,82 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { RootState, AppDispatch } from '@/store'
-import { fetchConversations, createConversation } from '@/store/slices/conversationsSlice'
+import { fetchConversations, fetchConversationById, createConversation, Conversation, Message, addMessage } from '@/store/slices/conversationsSlice'
 import { formatDistanceToNow } from 'date-fns'
-
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: string
-}
+import { cleanRegex } from 'node_modules/zod/dist/types/v4/core/util'
 
 export const Conversations = () => {
   const dispatch = useDispatch<AppDispatch>()
-  const { conversations, isLoading } = useSelector((state: RootState) => state.conversations)
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
+  const { conversations,currentConversation, isLoading, } = useSelector((state: RootState) => state.conversations)
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
-
   useEffect(() => {
     dispatch(fetchConversations())
   }, [dispatch])
 
+  useEffect(()=>{
+    setSelectedConversation(currentConversation);
+    if(currentConversation == null){
+      setMessages([])
+    }else{
+      setMessages([...currentConversation.messages])
+    }
+  },[currentConversation])
+
   const handleNewConversation = () => {
-    const newConversation = {
-      id: `conv-${Date.now()}`,
+    const newConversation : Conversation= {
+      // id: `conv-${Date.now()}`,
       summary: 'New Conversation',
       messageCount: 0,
       totalTokens: 0,
       status: 'active',
       updatedAt: new Date().toISOString()
     }
-    dispatch(createConversation(newConversation))
-    setSelectedConversation(newConversation.id)
+    
+    // dispatch(createConversation(newConversation))
+    setSelectedConversation(newConversation)
     setMessages([])
   }
 
+  const handleFetchConversaction = (id) =>{
+    try {
+      dispatch(fetchConversationById(id)).unwrap();
+    } catch (error) {
+      
+    }
+  }
+  console.log("Selected:",selectedConversation)
   const handleSendMessage = () => {
     if (!inputValue.trim()) return
 
     const newMessage: Message = {
-      id: `msg-${Date.now()}`,
       role: 'user',
       content: inputValue.trim(),
       timestamp: new Date().toISOString()
     }
-
-    setMessages(prev => [...prev, newMessage])
+    let newCov : Conversation = {
+      ...selectedConversation,
+      messages: [newMessage],
+      messageCount: selectedConversation.messageCount + 1
+    };
+    console.log("new", newCov);
+    setMessages(prev => [...prev, newMessage]);
+    dispatch(createConversation(newCov));
+    dispatch(addMessage(newMessage));
     setInputValue('')
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: `msg-${Date.now()}-ai`,
-        role: 'assistant',
-        content: 'This is a simulated AI response. In a real implementation, this would connect to your AI service.',
-        timestamp: new Date().toISOString()
-      }
-      setMessages(prev => [...prev, aiResponse])
-    }, 1000)
+    // // Simulate AI response
+    // setTimeout(() => {
+    //   const aiResponse: Message = {
+    //     id: `msg-${Date.now()}-ai`,
+    //     role: 'assistant',
+    //     content: 'This is a simulated AI response. In a real implementation, this would connect to your AI service.',
+    //     timestamp: new Date().toISOString()
+    //   }
+    //   setMessages(prev => [...prev, aiResponse])
+    // }, 1000)
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -76,7 +93,7 @@ export const Conversations = () => {
   }
 
   return (
-    <div className="flex h-screen">
+    <div className="flex " style={{height: 'calc(100vh - 120px)'}}>
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 border-r bg-muted/30 overflow-hidden`}>
         <div className="p-4 border-b">
@@ -85,35 +102,36 @@ export const Conversations = () => {
             New Conversation
           </Button>
         </div>
-        
-        <div className="p-4 space-y-2">
-          {conversations.map((conversation) => (
-            <Card 
-              key={conversation.id} 
-              className={`cursor-pointer transition-colors hover:bg-muted/50 ${
-                selectedConversation === conversation.id ? 'bg-muted border-primary' : ''
-              }`}
-              onClick={() => setSelectedConversation(conversation.id)}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-sm font-medium">
-                    {conversation.summary || `Conversation ${conversation.id.slice(0, 8)}`}
-                  </CardTitle>
-                  <Badge variant={conversation.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-                    {conversation.status}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="text-xs text-muted-foreground">
-                  {conversation.messageCount} messages • {formatDistanceToNow(new Date(conversation.updatedAt), { addSuffix: true })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+        <div className='h-full overflow-y-auto '>
+          <div className="p-4 space-y-2 h-full">
+            {conversations.map((conversation) => (
+              <Card 
+                key={conversation.id} 
+                className={`cursor-pointer transition-colors hover:bg-muted/50 ${
+                  selectedConversation?.id === (conversation?.id) ? 'bg-muted border-primary' : ''
+                }`}
+                onClick={()=>handleFetchConversaction(conversation.id)}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-sm font-medium">
+                      {conversation?.summary?.slice(0,50)+"..." || `Conversation ${conversation?.id.slice(0, 8)}`}
+                    </CardTitle>
+                    <Badge variant={conversation?.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                      {conversation?.status}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="text-xs text-muted-foreground">
+                    {conversation?.messageCount} messages • {formatDistanceToNow(new Date(conversation?.startedAt), { addSuffix: true })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
-        
+
         {conversations.length === 0 && !isLoading && (
           <div className="p-4 text-center text-muted-foreground">
             <MessageSquare className="mx-auto h-8 w-8 mb-2" />
@@ -123,7 +141,7 @@ export const Conversations = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-full relative">
         {/* Header */}
         <div className="border-b p-4 flex items-center justify-between">
           <div className="flex items-center">
@@ -142,9 +160,9 @@ export const Conversations = () => {
         </div>
 
         {/* Chat Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto  h-full p-4 max">
           {!selectedConversation ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center">
               <div className="text-center">
                 <MessageSquare className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
@@ -159,9 +177,9 @@ export const Conversations = () => {
             </div>
           ) : (
             <div className="space-y-4 max-w-4xl mx-auto">
-              {messages.map((message) => (
+              {messages.map((message, index) => (
                 <div
-                  key={message.id}
+                  key={index}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
@@ -196,8 +214,8 @@ export const Conversations = () => {
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message here..."
-                    className="min-h-[50px] max-h-[200px] resize-none"
-                    rows={1}
+                    className="min-h-[100px] max-h-[200px] resize-none"
+                    rows={3}
                   />
                 </div>
                 <Button

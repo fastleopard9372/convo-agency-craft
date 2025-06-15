@@ -1,36 +1,37 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 import { conversationsApi } from '@/services/api'
+import { act } from 'react'
 
 export interface Message {
-  id: string
-  conversationId: string
-  role: string
+  id?: string
+  conversationId?: string
+  role: 'user' | 'assistant'
+  content: string,
   tokenCount?: number
   vectorId?: string
   metadata?: Record<string, any>
-  timestamp: string
+  timestamp?: string
 }
 
 export interface Conversation {
-  id: string
-  userId: string
+  id?: string
   sessionId?: string
   messageCount: number
   totalTokens: number
   status: string
   summary?: string
-  metadata: Record<string, any>
-  startedAt: string
+  metadata?: Record<string, any>
+  startedAt?: string
   endedAt?: string
-  createdAt: string
-  updatedAt: string
+  createdAt?: string
+  updatedAt?: string
   messages?: Message[]
 }
 
 interface ConversationsState {
   conversations: Conversation[]
-  currentConversation: Conversation | null
+  currentConversation: Conversation | null,
   isLoading: boolean
   error: string | null
 }
@@ -50,10 +51,22 @@ export const fetchConversations = createAsyncThunk(
   }
 )
 
+export const fetchConversationById = createAsyncThunk(
+  'conversations/fetchConversation',
+  async (id:string) => {
+    const response = await conversationsApi.getConversationById(id)
+    return response.data
+  }
+)
+
 export const createConversation = createAsyncThunk(
   'conversations/createConversation',
   async (conversationData: Partial<Conversation>) => {
-    const response = await conversationsApi.createConversation(conversationData)
+    const response = await conversationsApi.createConversation({
+      conversationId: conversationData?.id,
+      messages: conversationData?.messages,
+      metadata: conversationData?.metadata
+    })
     return response.data
   }
 )
@@ -62,6 +75,10 @@ const conversationsSlice = createSlice({
   name: 'conversations',
   initialState,
   reducers: {
+    addMessage: (state, action) =>{
+      state.currentConversation.messages.push(action.payload);
+      state.currentConversation.messageCount++;
+    },
     clearError: (state) => {
       state.error = null
     },
@@ -83,11 +100,30 @@ const conversationsSlice = createSlice({
         state.isLoading = false
         state.error = action.error.message || 'Failed to fetch conversations'
       })
+      .addCase(fetchConversationById.pending, (state) => {
+        state.isLoading = true
+        state.error = null
+      })
+      .addCase(fetchConversationById.fulfilled, (state, action) => {
+        state.isLoading = false
+        state.currentConversation = action.payload.conversation
+      })
+      .addCase(fetchConversationById.rejected, (state, action) => {
+        state.isLoading = false
+        state.error = action.error.message || 'Failed to fetch conversation'
+      })
       .addCase(createConversation.fulfilled, (state, action) => {
-        state.conversations.unshift(action.payload.data)
+        const data = action.payload.data;
+        const i = state.conversations?.findIndex(v=>v.id == data.conversation?.id);
+        if(i == -1){
+          state.conversations.unshift(data.conversation);
+        }
+        state.currentConversation.messageCount++;
+        state.currentConversation.messages.push(data?.message);
+      // state.conversations(action.payload.data.message)
       })
   },
 })
 
-export const { clearError, setCurrentConversation } = conversationsSlice.actions
+export const { clearError, setCurrentConversation, addMessage } = conversationsSlice.actions
 export default conversationsSlice.reducer

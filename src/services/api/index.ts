@@ -11,7 +11,7 @@ class ApiClient {
   constructor() {
     this.client = axios.create({
       baseURL: API_BASE_URL,
-      timeout: 10000,
+      timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -94,11 +94,11 @@ export const jobsApi = {
 // Conversations API
 export const conversationsApi = {
   getConversations: () =>
-    apiClient.get('/conversations'),
+    apiClient.get('/memory/conversations'),
   createConversation: (data: any) =>
-    apiClient.post('/conversations', data),
+    apiClient.post('/memory/conversations', data),
   getConversationById: (id: string) =>
-    apiClient.get(`/conversations/${id}`),
+    apiClient.get(`/memory/conversations/${id}`),
 }
 
 // Proposals API
