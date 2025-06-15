@@ -70,7 +70,7 @@ export const Conversations = () => {
     console.log("new", newCov);
     setMessages(prev => [...prev, newMessage]);
     dispatch(createConversation(newCov));
-    dispatch(addMessage(newMessage));
+    dispatch(addMessage(newMessage))
     setInputValue('')
 
     // // Simulate AI response
