@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Plus, Search, Filter, Briefcase, DollarSign, Calendar } from 'lucide-react'
@@ -13,6 +12,7 @@ import { useForm } from 'react-hook-form'
 import { RootState, AppDispatch } from '@/store'
 import { fetchJobs, createJob, Job } from '@/store/slices/jobsSlice'
 import { generateProposal } from '@/store/slices/proposalsSlice'
+import { JobDetailsModal } from '@/components/jobs/JobDetailsModal'
 
 interface JobFormData {
   title: string
@@ -25,6 +25,8 @@ interface JobFormData {
 export const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [isJobDetailsOpen, setIsJobDetailsOpen] = useState(false)
   const dispatch = useDispatch<AppDispatch>()
   const { jobs, isLoading, pagination } = useSelector((state: RootState) => state.jobs)
   const { generating } = useSelector((state: RootState) => state.proposals)
@@ -52,6 +54,16 @@ export const Jobs = () => {
     } catch (error) {
       console.error('Failed to generate proposal:', error)
     }
+  }
+
+  const handleJobClick = (job: Job) => {
+    setSelectedJob(job)
+    setIsJobDetailsOpen(true)
+  }
+
+  const handleGenerateProposalFromModal = async (job: Job) => {
+    setIsJobDetailsOpen(false)
+    await handleGenerateProposal(job)
   }
 
   const filteredJobs = jobs.filter(job =>
@@ -172,7 +184,11 @@ export const Jobs = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredJobs.map((job) => (
-            <Card key={job.id} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={job.id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleJobClick(job)}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-lg line-clamp-2">{job.title}</CardTitle>
@@ -235,6 +251,15 @@ export const Jobs = () => {
           </p>
         </div>
       )}
+
+      {/* Job Details Modal */}
+      <JobDetailsModal
+        job={selectedJob}
+        open={isJobDetailsOpen}
+        onOpenChange={setIsJobDetailsOpen}
+        onGenerateProposal={handleGenerateProposalFromModal}
+        generating={generating && selId === selectedJob?.id}
+      />
     </div>
   )
 }

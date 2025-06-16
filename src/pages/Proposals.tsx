@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { RootState } from '@/store'
@@ -8,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Search, FileText, Calendar, DollarSign } from 'lucide-react'
+import { ProposalDetailsModal } from '@/components/proposals/ProposalDetailsModal'
 
 export const Proposals = () => {
   const { proposals, jobs } = useSelector((state: RootState) => ({
@@ -17,6 +17,10 @@ export const Proposals = () => {
 
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedProposal, setSelectedProposal] = useState<any>(null)
+  const [selectedJob, setSelectedJob] = useState<any>(null)
+  const [isProposalDetailsOpen, setIsProposalDetailsOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view')
 
   const filteredProposals = proposals.filter(proposal => {
     const matchesSearch = proposal.content.toLowerCase().includes(searchTerm.toLowerCase())
@@ -48,6 +52,27 @@ export const Proposals = () => {
       default:
         return 'text-gray-600'
     }
+  }
+
+  const handleViewDetails = (proposal: any) => {
+    const job = jobs.find(j => j.id === proposal.jobId)
+    setSelectedProposal(proposal)
+    setSelectedJob(job)
+    setModalMode('view')
+    setIsProposalDetailsOpen(true)
+  }
+
+  const handleEdit = (proposal: any) => {
+    const job = jobs.find(j => j.id === proposal.jobId)
+    setSelectedProposal(proposal)
+    setSelectedJob(job)
+    setModalMode('edit')
+    setIsProposalDetailsOpen(true)
+  }
+
+  const handleSaveProposal = (proposalId: string, updates: any) => {
+    // TODO: Implement save functionality with Redux action
+    console.log('Saving proposal:', proposalId, updates)
   }
 
   return (
@@ -138,10 +163,20 @@ export const Proposals = () => {
                 )}
 
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleViewDetails(proposal)}
+                  >
                     View Details
                   </Button>
-                  <Button variant="default" size="sm" className="flex-1">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleEdit(proposal)}
+                  >
                     Edit
                   </Button>
                 </div>
@@ -162,6 +197,17 @@ export const Proposals = () => {
           </p>
         </div>
       )}
+
+      {/* Proposal Details Modal */}
+      <ProposalDetailsModal
+        proposal={selectedProposal}
+        job={selectedJob}
+        open={isProposalDetailsOpen}
+        onOpenChange={setIsProposalDetailsOpen}
+        onSave={handleSaveProposal}
+        mode={modalMode}
+        onModeChange={setModalMode}
+      />
     </div>
   )
 }

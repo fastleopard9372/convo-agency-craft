@@ -286,7 +286,9 @@ export type Database = {
       }
       Message: {
         Row: {
+          content: string
           conversationId: string
+          filePath: string
           id: string
           metadata: Json | null
           role: string
@@ -295,7 +297,9 @@ export type Database = {
           vectorId: string | null
         }
         Insert: {
+          content?: string
           conversationId: string
+          filePath?: string
           id: string
           metadata?: Json | null
           role: string
@@ -304,7 +308,9 @@ export type Database = {
           vectorId?: string | null
         }
         Update: {
+          content?: string
           conversationId?: string
+          filePath?: string
           id?: string
           metadata?: Json | null
           role?: string
