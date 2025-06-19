@@ -6,7 +6,8 @@ import {
   MessageSquare, 
   FileText, 
   Settings,
-  Brain
+  Brain,
+  Bot
 } from 'lucide-react'
 import {
   Sidebar,
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Conversations', href: '/conversations', icon: MessageSquare },
   { name: 'Jobs', href: '/jobs', icon: Briefcase },
   { name: 'Proposals', href: '/proposals', icon: FileText },
+  { name: 'Automation', href: '/automation', icon: Bot },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Brain },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]

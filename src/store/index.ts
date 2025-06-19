@@ -8,6 +8,7 @@ import themeReducer from './slices/themeSlice'
 import jobsReducer from './slices/jobsSlice'
 import conversationsReducer from './slices/conversationsSlice'
 import proposalsReducer from './slices/proposalsSlice'
+import automationReducer from './slices/automationSlice'
 
 const persistConfig = {
   key: 'root',
@@ -21,6 +22,7 @@ const rootReducer = combineReducers({
   jobs: jobsReducer,
   conversations: conversationsReducer,
   proposals: proposalsReducer,
+  automation: automationReducer, 
 })
 
 const persistedReducer = persistReducer(persistConfig, rootReducer)

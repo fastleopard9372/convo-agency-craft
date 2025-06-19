@@ -17,6 +17,7 @@ import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
 import { Dashboard } from '@/pages/Dashboard'
 import { Jobs } from '@/pages/Jobs'
 import { Conversations } from '@/pages/Conversations'
+import { Automation } from '@/pages/Automation'
 import { Proposals } from '@/pages/Proposals'
 import NotFound from "./pages/NotFound"
 
@@ -113,6 +114,13 @@ const AppRoutes = () => {
             </Layout>
           </AuthGuard>
         } />
+        <Route path="/automation" element={
+        <AuthGuard>
+          <Layout>
+            <Automation />
+          </Layout>
+        </AuthGuard>
+      } />
 
         {/* Redirects */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
